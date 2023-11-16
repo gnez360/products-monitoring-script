@@ -5,7 +5,7 @@ const fs = require('fs');
 const moment = require('moment');
 const https = require('https');
 const intl = require('intl');
-
+const cron = require('node-cron');
 
 moment.locale('pt-BR');
 
@@ -24,6 +24,12 @@ class ProductScraper {
         this.type = 'text/plain';
         this.token = TOKEN;
         this.endpoint = ENDPOINT;
+
+       
+        cron.schedule('0 * * * *', async () => {
+            console.log('Executing the scraper...');
+            await this.execute();
+        });
     }
 
     generateGUID() {
@@ -222,4 +228,3 @@ class ProductScraper {
 }
 
 const productScraper = new ProductScraper();
-productScraper.execute();
