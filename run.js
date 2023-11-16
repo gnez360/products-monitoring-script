@@ -26,7 +26,7 @@ class ProductScraper {
         this.endpoint = ENDPOINT;
 
        
-        cron.schedule('0 * * * *', async () => {
+        cron.schedule('*/10 * * * *', async () => {
             console.log('Executing the scraper...');
             await this.execute();
         });
