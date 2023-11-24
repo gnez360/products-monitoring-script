@@ -24,7 +24,7 @@ class ProductScraper {
         this.type = 'text/plain';
         this.token = TOKEN;
         this.endpoint = ENDPOINT;
-
+        this.execute();
        
         cron.schedule('*/1 * * * *', async () => {
             console.log('Executing the scraper...');
@@ -71,7 +71,14 @@ class ProductScraper {
     async fetchHTML(url) {
         try {
             const axiosInstance = this.createAxiosInstance();
-            const response = await axiosInstance.get(url);
+            const headers = {
+                'Accept': '*/*',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,sm;q=0.6',
+                'User-Agent': 'PostmanRuntime/7.34.0',
+                'Host': 'olx.com.br'
+            };
+            const response = await axiosInstance.get(url, { headers });        
             return response.data;
         } catch (error) {
             throw new Error(`Error fetching HTML: ${error}`);
@@ -131,14 +138,33 @@ class ProductScraper {
             currency: 'BRL',
         });
         return formatter.format(price);
-    }
+    };
 
+    transformarLink(link) {
+        const regex1 = /https:\/\/carros\.seminovosbh\.com\.br\/(\w+)\/(\w+)\/(\d+)\/(\d+)\/(\w+)/;
+        const regex2 = /https:\/\/carros\.seminovosbh\.com\.br\/(\w+)-(\w+)-(\d+)-(\d+)-(\d+)-(\w+)\.jpeg/;
+        
+        const match1 = link.match(regex1);
+        const match2 = link.match(regex2);
+    
+        if (match1) {
+            const novoLink = `https://seminovos.com.br/${match1[1]}-${match1[2]}-${match1[3]}-${match1[4]}--${match1[5]}`;
+            return novoLink;
+        } else if (match2) {
+            const novoLink = `https://seminovos.com.br/${match2[1]}-${match2[2]}-${match2[3]}-${match2[4]}--${match2[5]}`;
+            return novoLink;
+        } else {
+            console.error("O link fornecido não corresponde a nenhum formato esperado.");
+            return null;
+        }
+    }
+    
     async getOlxProducts() {
         try {
-            const html = await this.fetchHTML(OLX_URL);
+            const html = await this.fetchHTML(OLX_URL);          
             const links = this.filterElementsJsonOlx(html);
             const products = links[0].props.pageProps.ads;
-            const combinedData = products.map((product, index) => {             
+            const combinedData = products.map((product, index) => {                       
                 return {
                     title: product.title,
                     price: product.price,
@@ -163,14 +189,13 @@ class ProductScraper {
                 const url = `${SEMINOVOS_BASE_URL}?page=${page}&ajax`;
                 const html = await this.fetchSeminovosHTML(url);
                 const productsList = this.filterElementsJson(html);
-                const products = productsList.map(element => JSON.parse(element));
-
+                const products = productsList.map(element => JSON.parse(element));            
                 const combinedData = products.map(product => ({
                     title: product.name,
                     price: this.formatCurrencyBRL(product.offers.price),
                     locationAndDate: "teste teste",
                     image: product.image,
-                    link: product.url
+                    link: this.transformarLink(product.image)
                 }));
 
                 this.productList.push(...combinedData);
