@@ -4,7 +4,7 @@
   "main": "index.ts",
   "scripts": {
     "dev": "ts-node index.ts",
-    "build": "tsc",
+    "build": "tsc && node index.js",
     "start": "ts-node index.ts"
   },
   "dependencies": {
@@ -14,6 +14,7 @@
     "express": "^4.17.1",
     "fs": "0.0.1-security",
     "intl": "^1.2.2",
+    "node-cron": "^3.0.3",
     "@types/node-cron": "^3.0.11",
     "moment": "^2.29.1",
     "uuid": "^8.3.2"
@@ -25,6 +26,7 @@
     "@types/node-cron": "^3.0.11",
     "@types/uuid": "^9.0.7",
     "@vercel/node": "^2.9.6",
+    "node-cron": "^3.0.3",
     "ts-node": "^10.9.1",
     "typescript": "^4.9.5"
   },
