@@ -1,11 +1,13 @@
-const axios = require('axios');
-const { v4: uuidv4 } = require('uuid');
-const cheerio = require('cheerio');
-const fs = require('fs');
-const moment = require('moment');
-const https = require('https');
-const intl = require('intl');
-const cron = require('node-cron');
+import { VercelRequest, VercelResponse } from '@vercel/node';
+import express from 'express';
+import axios from 'axios';
+import cheerio from 'cheerio';
+import fs from 'fs';
+import moment from 'moment';
+import https from 'https';
+import intl from 'intl';
+import cron from 'node-cron';
+import { v4 as uuidv4 } from 'uuid';
 
 moment.locale('pt-BR');
 
@@ -16,7 +18,27 @@ const MAX_PAGES = 5;
 const TOKEN = 'dGVzdGVhMjU6NjEyRFNXb1VPZjhvVjFxbUtjSlE=';
 const ENDPOINT = 'https://guilherme-nery-c5a2b.http.msging.net/messages';
 
+interface ProductItem {
+    title: string;
+    price: string;
+    locationAndDate: {
+        location: string;
+        date: number;
+    };
+    image: string;
+    link: string;
+}
+
+
 class ProductScraper {
+    private id: string;
+    private productList: any[];
+    private to: string;
+    private type: string;
+    private token: string;
+    private endpoint: string;
+
+    
     constructor() {
         this.productList = [];
         this.id = this.generateGUID();
@@ -24,19 +46,18 @@ class ProductScraper {
         this.type = 'text/plain';
         this.token = TOKEN;
         this.endpoint = ENDPOINT;
-        this.execute();
-       
+
         cron.schedule('*/1 * * * *', async () => {
             console.log('Executing the scraper...');
             await this.execute();
         });
     }
 
-    generateGUID() {
+    private generateGUID(): string {
         return uuidv4();
     }
 
-    async sendMessage(content) {
+    private async sendMessage(content: string): Promise<void> {
         const data = {
             id: this.id,
             to: this.to,
@@ -60,7 +81,7 @@ class ProductScraper {
         }
     }
 
-    createAxiosInstance() {
+    private createAxiosInstance(): any {
         return axios.create({
             httpsAgent: new https.Agent({
                 rejectUnauthorized: false
@@ -68,7 +89,7 @@ class ProductScraper {
         });
     }
 
-    async fetchHTML(url) {
+    private async fetchHTML(url: string): Promise<any> {
         try {
             const axiosInstance = this.createAxiosInstance();
             const headers = {
@@ -78,14 +99,14 @@ class ProductScraper {
                 'User-Agent': 'PostmanRuntime/7.34.0',
                 'Host': 'olx.com.br'
             };
-            const response = await axiosInstance.get(url, { headers });        
+            const response = await axiosInstance.get(url, { headers });
             return response.data;
         } catch (error) {
             throw new Error(`Error fetching HTML: ${error}`);
         }
     }
 
-    async fetchSeminovosHTML(url) {
+    private async fetchSeminovosHTML(url: string): Promise<any> {
         const headers = {
             'Accept': '*/*',
             'Accept-Encoding': 'gzip, deflate, br',
@@ -103,26 +124,30 @@ class ProductScraper {
         }
     }
 
-    filterElementsJson(html) {
+    private filterElementsJson(html: string): string[] {
         const $ = cheerio.load(html);
-        const elements = [];
+        const elements: string[] = [];
+
         $('script[type="application/ld+json"]').each((index, element) => {
             const scriptContent = $(element).html();
-            elements.push(scriptContent);
+            if (scriptContent) {
+                elements.push(scriptContent);
+            }
         });
+
         return elements;
     }
 
-    filterElementsJsonOlx(html) {
+    private filterElementsJsonOlx(html: string): object[] {
         const $ = cheerio.load(html);
-        const elements = [];
+        const elements: object[] = [];
 
         const nextDataScript = $('script#__NEXT_DATA__[type="application/json"]');
 
         if (nextDataScript.length > 0) {
             const scriptContent = nextDataScript.html();
             try {
-                const jsonData = JSON.parse(scriptContent);
+                const jsonData = JSON.parse(scriptContent || '');
                 elements.push(jsonData);
             } catch (error) {
                 console.error(`Error parsing JSON: ${error}`);
@@ -132,39 +157,41 @@ class ProductScraper {
         return elements;
     }
 
-    formatCurrencyBRL(price) {
+    private formatCurrencyBRL(price: number): string {
         const formatter = new intl.NumberFormat('pt-BR', {
             style: 'currency',
             currency: 'BRL',
         });
         return formatter.format(price);
-    };
+    }
 
-    transformarLink(link) {
+    private transformLink(link: string | null): string {
+        if (!link) {
+            throw new Error("The provided link is null or undefined.");
+        }
+
         const regex1 = /https:\/\/carros\.seminovosbh\.com\.br\/(\w+)\/(\w+)\/(\d+)\/(\d+)\/(\w+)/;
         const regex2 = /https:\/\/carros\.seminovosbh\.com\.br\/(\w+)-(\w+)-(\d+)-(\d+)-(\d+)-(\w+)\.jpeg/;
-        
+
         const match1 = link.match(regex1);
         const match2 = link.match(regex2);
-    
+
         if (match1) {
-            const novoLink = `https://seminovos.com.br/${match1[1]}-${match1[2]}-${match1[3]}-${match1[4]}--${match1[5]}`;
-            return novoLink;
+            return `https://seminovos.com.br/${match1[1]}-${match1[2]}-${match1[3]}-${match1[4]}--${match1[5]}`;
         } else if (match2) {
-            const novoLink = `https://seminovos.com.br/${match2[1]}-${match2[2]}-${match2[3]}-${match2[4]}--${match2[5]}`;
-            return novoLink;
+            return `https://seminovos.com.br/${match2[1]}-${match2[2]}-${match2[3]}-${match2[4]}--${match2[5]}`;
         } else {
-            console.error("O link fornecido não corresponde a nenhum formato esperado.");
-            return null;
+            throw new Error("The provided link does not correspond to any expected format.");
         }
     }
-    
-    async getOlxProducts() {
+
+    private async getOlxProducts(): Promise<any[] | undefined> {
         try {
-            const html = await this.fetchHTML(OLX_URL);          
+            const html = await this.fetchHTML(OLX_URL);
             const links = this.filterElementsJsonOlx(html);
-            const products = links[0].props.pageProps.ads;
-            const combinedData = products.map((product, index) => {                       
+            const linksData: { props?: { pageProps?: { ads?: any[] } } } = links[0];
+            const products = linksData.props?.pageProps?.ads || [];
+            const combinedData = products.map((product, index) => {
                 return {
                     title: product.title,
                     price: product.price,
@@ -183,19 +210,19 @@ class ProductScraper {
         }
     }
 
-    async getSeminovosProducts() {
+    private async getSeminovosProducts(): Promise<any[] | undefined> {
         try {
             for (let page = 1; page <= MAX_PAGES; page++) {
                 const url = `${SEMINOVOS_BASE_URL}?page=${page}&ajax`;
                 const html = await this.fetchSeminovosHTML(url);
                 const productsList = this.filterElementsJson(html);
-                const products = productsList.map(element => JSON.parse(element));            
+                const products = productsList.map(element => JSON.parse(element));
                 const combinedData = products.map(product => ({
                     title: product.name,
                     price: this.formatCurrencyBRL(product.offers.price),
                     locationAndDate: "teste teste",
                     image: product.image,
-                    link: this.transformarLink(product.image)
+                    link: this.transformLink(product.image)
                 }));
 
                 this.productList.push(...combinedData);
@@ -206,36 +233,42 @@ class ProductScraper {
         }
     }
 
-    async getProductListDetails() {
-        const olxProducts = await this.getOlxProducts();
-        const seminovosProducts = await this.getSeminovosProducts();
-
-        const combinedProductList = [...olxProducts, ...seminovosProducts];
-
-        const previousFileName = 'previousProductList.json';
-
+    private async getProductListDetails(): Promise<ProductItem[]> {
         try {
-            const previousData = fs.existsSync(previousFileName)
-                ? JSON.parse(fs.readFileSync(previousFileName, 'utf-8'))
-                : [];
+            const olxProducts = (await this.getOlxProducts()) || [];
+            const seminovosProducts = (await this.getSeminovosProducts()) || [];
 
-            const differentItems = combinedProductList.filter((currentItem) => {
-                const found = previousData.find((previousItem) => {
-                    return JSON.stringify(currentItem) === JSON.stringify(previousItem);
+            const combinedProductList: ProductItem[] = [...olxProducts, ...seminovosProducts];
+
+            const previousFileName = 'previousProductList.json';
+
+            try {
+                const previousData: ProductItem[] = fs.existsSync(previousFileName)
+                    ? JSON.parse(fs.readFileSync(previousFileName, 'utf-8'))
+                    : [];
+
+                const differentItems = combinedProductList.filter((currentItem) => {
+                    const found = previousData.find((previousItem) => {
+                        return JSON.stringify(currentItem) === JSON.stringify(previousItem);
+                    });
+                    return !found;
                 });
-                return !found;
-            });
 
-            fs.writeFileSync(previousFileName, JSON.stringify(combinedProductList, null, 2), 'utf-8');
+                fs.writeFileSync(previousFileName, JSON.stringify(combinedProductList, null, 2), 'utf-8');
 
-            return differentItems;
+                return differentItems;
+            } catch (error) {
+                console.error(`Error processing/writing JSON files: ${error}`);
+                return [];
+            }
         } catch (error) {
-            console.error(`Error processing JSON files: ${error}`);
+            console.error(`Error getting product details: ${error}`);
             return [];
         }
     }
 
-    async execute() {
+
+    async execute(): Promise<void> {
         try {
             const productListDetails = await this.getProductListDetails();
 
@@ -245,11 +278,20 @@ class ProductScraper {
             products.forEach(item => {
                 const message = `Title: ${item.title}\nPrice: ${item.price}\nLocation: ${item.locationAndDate.location}\nDate: ${item.locationAndDate.date}\nImage: ${item.image}\n\nLink: ${item.link}`;
                 this.sendMessage(message);
-            });   
+            });
         } catch (error) {
             console.error(error);
         }
     }
 }
 
+
 const productScraper = new ProductScraper();
+const app = express();
+
+app.post('/scrape', async (req, res) => {
+    await productScraper.execute();
+    res.status(200).send('Scraping process initiated.');
+});
+
+export default app;
