@@ -94,21 +94,20 @@ class ProductScraper {
         return axios_1.default.create({
             httpsAgent: new https_1.default.Agent({
                 rejectUnauthorized: false,
-                secureProtocol: 'TLSv1_2_method',
             })
         });
     }
     fetchHTML(url) {
         return __awaiter(this, void 0, void 0, function* () {
+            const headers = {
+                'Accept': '*/*',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,sm;q=0.6',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Host': 'products-monitoring-script-testing.vercel.app'
+            };
             try {
                 const axiosInstance = this.createAxiosInstance();
-                const headers = {
-                    'Accept': '*/*',
-                    'Accept-Encoding': 'gzip, deflate, br',
-                    'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,sm;q=0.6',
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                    'Host': 'products-monitoring-script-testing.vercel.app'
-                };
                 const response = yield axiosInstance.get(url, { headers });
                 return response.data;
             }

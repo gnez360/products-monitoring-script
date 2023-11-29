@@ -86,21 +86,21 @@ class ProductScraper {
         return axios.create({
             httpsAgent: new https.Agent({
                 rejectUnauthorized: false,
-                secureProtocol: 'TLSv1_2_method',
             })
         });
     }
 
-    private async fetchHTML(url: string): Promise<any> {
+    private async fetchHTML(url: string): Promise<any> {        
+        const headers = {
+            'Accept': '*/*',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,sm;q=0.6',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Host': 'products-monitoring-script-testing.vercel.app'
+        };
+        
         try {
-            const axiosInstance = this.createAxiosInstance();
-            const headers = {
-                'Accept': '*/*',
-                'Accept-Encoding': 'gzip, deflate, br',
-                'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,sm;q=0.6',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                'Host': 'products-monitoring-script-testing.vercel.app'
-            };
+            const axiosInstance = this.createAxiosInstance();           
             const response = await axiosInstance.get(url, { headers });
             return response.data;
         } catch (error) {
@@ -108,7 +108,7 @@ class ProductScraper {
         }
     }
 
-    private async fetchSeminovosHTML(url: string): Promise<any> {
+    private async fetchSeminovosHTML(url: string): Promise<any> {      
         const headers = {
             'Accept': '*/*',
             'Accept-Encoding': 'gzip, deflate, br',
@@ -118,7 +118,7 @@ class ProductScraper {
         };
 
         try {
-            const axiosInstance = this.createAxiosInstance();
+            const axiosInstance = this.createAxiosInstance();          
             const response = await axiosInstance.get(url, { headers });
             return response.data;
         } catch (error) {
