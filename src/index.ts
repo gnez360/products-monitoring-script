@@ -39,7 +39,7 @@ class ProductScraper {
     private token: string;
     private endpoint: string;
 
-    
+
     constructor() {
         this.productList = [];
         this.id = this.generateGUID();
@@ -85,22 +85,21 @@ class ProductScraper {
     private createAxiosInstance(): any {
         return axios.create({
             httpsAgent: new https.Agent({
-                rejectUnauthorized: false,
+                rejectUnauthorized: false
             })
         });
     }
 
-    private async fetchHTML(url: string): Promise<any> {        
+    private async fetchHTML(url: string): Promise<any> {     
         const headers = {
             'Accept': '*/*',
             'Accept-Encoding': 'gzip, deflate, br',
             'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,sm;q=0.6',
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            'Host': 'products-monitoring-script-testing.vercel.app'
+            'Host': 'https://products-monitoring-script-testing.vercel.app'
         };
-        
         try {
-            const axiosInstance = this.createAxiosInstance();           
+            const axiosInstance = this.createAxiosInstance();
             const response = await axiosInstance.get(url, { headers });
             return response.data;
         } catch (error) {
@@ -108,17 +107,17 @@ class ProductScraper {
         }
     }
 
-    private async fetchSeminovosHTML(url: string): Promise<any> {      
+    private async fetchSeminovosHTML(url: string): Promise<any> {
         const headers = {
             'Accept': '*/*',
             'Accept-Encoding': 'gzip, deflate, br',
             'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,sm;q=0.6',
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            'Host': 'products-monitoring-script-testing.vercel.app'
+            'Host': 'https://products-monitoring-script-testing.vercel.app'
         };
 
         try {
-            const axiosInstance = this.createAxiosInstance();          
+            const axiosInstance = this.createAxiosInstance();
             const response = await axiosInstance.get(url, { headers });
             return response.data;
         } catch (error) {
@@ -234,45 +233,45 @@ class ProductScraper {
             console.error('Error getting Seminovos products:', error);
         }
     }
-    
+
     private async getProductListDetails(): Promise<ProductItem[]> {
         try {
-          const olxProducts = (await this.getOlxProducts()) || [];
-          const seminovosProducts = (await this.getSeminovosProducts()) || [];
-      
-          const combinedProductList: ProductItem[] = [...olxProducts, ...seminovosProducts];
-      
-          const previousFileName = 'previousProductList.json';
-      
-          try {
-        
-            const tempPath = path.join('/tmp', previousFileName);
-      
-            const previousData: ProductItem[] = fs.existsSync(tempPath)
-              ? JSON.parse(fs.readFileSync(tempPath, 'utf-8'))
-              : [];
-      
-            const differentItems = combinedProductList.filter((currentItem) => {
-              const found = previousData.find((previousItem) => {
-                return JSON.stringify(currentItem) === JSON.stringify(previousItem);
-              });
-              return !found;
-            });
-      
-          
-            fs.writeFileSync(tempPath, JSON.stringify(combinedProductList, null, 2), 'utf-8');
-      
-            return differentItems;
-          } catch (error) {
-            console.error(`Error processing/writing JSON files: ${error}`);
-            return [];
-          }
+            const olxProducts = (await this.getOlxProducts()) || [];
+            const seminovosProducts = (await this.getSeminovosProducts()) || [];
+
+            const combinedProductList: ProductItem[] = [...olxProducts, ...seminovosProducts];
+
+            const previousFileName = 'previousProductList.json';
+
+            try {
+
+                const tempPath = path.join('/tmp', previousFileName);
+
+                const previousData: ProductItem[] = fs.existsSync(tempPath)
+                    ? JSON.parse(fs.readFileSync(tempPath, 'utf-8'))
+                    : [];
+
+                const differentItems = combinedProductList.filter((currentItem) => {
+                    const found = previousData.find((previousItem) => {
+                        return JSON.stringify(currentItem) === JSON.stringify(previousItem);
+                    });
+                    return !found;
+                });
+
+
+                fs.writeFileSync(tempPath, JSON.stringify(combinedProductList, null, 2), 'utf-8');
+
+                return differentItems;
+            } catch (error) {
+                console.error(`Error processing/writing JSON files: ${error}`);
+                return [];
+            }
         } catch (error) {
-          console.error(`Error getting product details: ${error}`);
-          return [];
+            console.error(`Error getting product details: ${error}`);
+            return [];
         }
-      }
-    
+    }
+
 
 
     async execute(): Promise<void> {
@@ -300,15 +299,15 @@ const app = express();
 const port = process.env.PORT || 8080
 
 app.get('/', (_req: Request, res: Response) => {
-  return res.send('Express Typescript on Vercel')
+    return res.send('Express Typescript on Vercel')
 })
 
 app.get('/ping', (_req: Request, res: Response) => {
-  return res.send('pong 🏓')
+    return res.send('pong 🏓')
 })
 
 app.listen(port, () => {
-  return console.log(`Server is listening on ${port}`)
+    return console.log(`Server is listening on ${port}`)
 })
 
 app.get('/scrape', async (req, res) => {
