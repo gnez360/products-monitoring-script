@@ -1,11 +1,7 @@
 {
   "name": "vercel-express-scraper",
   "version": "1.0.0",
-  "main": "index.ts",
-  "scripts": {
-    "start": "ts-node index.ts",
-    "build": "tsc"
-  },
+  "main": "index.ts", 
   "dependencies": {
     "@types/node": "^17.0.42",
     "axios": "^0.24.0",
