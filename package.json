@@ -28,7 +28,7 @@
     "express": "^4.17.1",
     "fs": "0.0.1-security",
     "intl": "^1.2.2",
-    "node-cron": "^3.0.3",   
+    "node-cron": "^3.0.3",
     "@vercel/node": "^2.9.6",
     "moment": "^2.29.1",
     "uuid": "^8.3.2",
