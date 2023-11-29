@@ -243,7 +243,7 @@ class ProductScraper {
 
             try {
 
-                const tempPath = path.join('/tmp', previousFileName);
+                const tempPath = path.join(__dirname, 'tmp', previousFileName);
 
                 const previousData: ProductItem[] = fs.existsSync(tempPath)
                     ? JSON.parse(fs.readFileSync(tempPath, 'utf-8'))
