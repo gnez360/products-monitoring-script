@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "nodemon src/index.ts",
-    "build": "tsc",
+    "build": "npm install && tsc --build tsconfig.json",
     "ts.check": "tsc --project tsconfig.json",
     "add-build": "git add dist"
   },
