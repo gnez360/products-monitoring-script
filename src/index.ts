@@ -2,11 +2,12 @@ import { VercelRequest, VercelResponse } from '@vercel/node';
 import express, { Request, Response } from 'express'
 import axios from 'axios';
 import cheerio from 'cheerio';
-import fs from 'fs';
+import * as fs from 'fs';
+import * as path from 'path';
 import moment from 'moment';
+import timezone from 'moment-timezone';
 import https from 'https';
 import intl from 'intl';
-import cron from 'node-cron';
 import { v4 as uuidv4 } from 'uuid';
 
 moment.locale('pt-BR');
@@ -47,10 +48,10 @@ class ProductScraper {
         this.token = TOKEN;
         this.endpoint = ENDPOINT;
 
-        cron.schedule('*/1 * * * *', async () => {
-            console.log('Executing the scraper...');
-            await this.execute();
-        });
+        this.execute();
+        const localTime = timezone().tz('America/Sao_Paulo').format('YYYY-MM-DD HH:mm:ss');
+
+        console.log(`[${localTime}] Executing the scraper...`);
     }
 
     private generateGUID(): string {
@@ -232,40 +233,52 @@ class ProductScraper {
             console.error('Error getting Seminovos products:', error);
         }
     }
-
+    
     private async getProductListDetails(): Promise<ProductItem[]> {
+      try {
+        const olxProducts = (await this.getOlxProducts()) || [];
+        const seminovosProducts = (await this.getSeminovosProducts()) || [];
+    
+        const combinedProductList: ProductItem[] = [...olxProducts, ...seminovosProducts];
+    
+        const previousFileName = 'previousProductList.json';
+    
         try {
-            const olxProducts = (await this.getOlxProducts()) || [];
-            const seminovosProducts = (await this.getSeminovosProducts()) || [];
-
-            const combinedProductList: ProductItem[] = [...olxProducts, ...seminovosProducts];
-
-            const previousFileName = 'previousProductList.json';
-
-            try {
-                const previousData: ProductItem[] = fs.existsSync(previousFileName)
-                    ? JSON.parse(fs.readFileSync(previousFileName, 'utf-8'))
-                    : [];
-
-                const differentItems = combinedProductList.filter((currentItem) => {
-                    const found = previousData.find((previousItem) => {
-                        return JSON.stringify(currentItem) === JSON.stringify(previousItem);
-                    });
-                    return !found;
-                });
-
-                fs.writeFileSync(previousFileName, JSON.stringify(combinedProductList, null, 2), 'utf-8');
-
-                return differentItems;
-            } catch (error) {
-                console.error(`Error processing/writing JSON files: ${error}`);
-                return [];
-            }
+          
+          const distPath = path.join(__dirname, '');
+    
+         
+          if (!fs.existsSync(distPath)) {
+            fs.mkdirSync(distPath);
+          }
+    
+          const previousDataPath = path.join(distPath, previousFileName);
+    
+          const previousData: ProductItem[] = fs.existsSync(previousDataPath)
+            ? JSON.parse(fs.readFileSync(previousDataPath, 'utf-8'))
+            : [];
+    
+          const differentItems = combinedProductList.filter((currentItem) => {
+            const found = previousData.find((previousItem) => {
+              return JSON.stringify(currentItem) === JSON.stringify(previousItem);
+            });
+            return !found;
+          });
+    
+          // Salvar o arquivo na pasta dist
+          fs.writeFileSync(previousDataPath, JSON.stringify(combinedProductList, null, 2), 'utf-8');
+    
+          return differentItems;
         } catch (error) {
-            console.error(`Error getting product details: ${error}`);
-            return [];
+          console.error(`Error processing/writing JSON files: ${error}`);
+          return [];
         }
+      } catch (error) {
+        console.error(`Error getting product details: ${error}`);
+        return [];
+      }
     }
+    
 
 
     async execute(): Promise<void> {

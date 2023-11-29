@@ -1,4 +1,27 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -15,11 +38,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const axios_1 = __importDefault(require("axios"));
 const cheerio_1 = __importDefault(require("cheerio"));
-const fs_1 = __importDefault(require("fs"));
+const fs = __importStar(require("fs"));
+const path = __importStar(require("path"));
 const moment_1 = __importDefault(require("moment"));
+const moment_timezone_1 = __importDefault(require("moment-timezone"));
 const https_1 = __importDefault(require("https"));
 const intl_1 = __importDefault(require("intl"));
-const node_cron_1 = __importDefault(require("node-cron"));
 const uuid_1 = require("uuid");
 moment_1.default.locale('pt-BR');
 const OLX_URL = 'https://www.olx.com.br/autos-e-pecas/carros-vans-e-utilitarios/hyundai/i30/estado-mg/belo-horizonte-e-regiao?sf=1';
@@ -35,10 +59,9 @@ class ProductScraper {
         this.type = 'text/plain';
         this.token = TOKEN;
         this.endpoint = ENDPOINT;
-        node_cron_1.default.schedule('*/1 * * * *', () => __awaiter(this, void 0, void 0, function* () {
-            console.log('Executing the scraper...');
-            yield this.execute();
-        }));
+        this.execute();
+        const localTime = (0, moment_timezone_1.default)().tz('America/Sao_Paulo').format('YYYY-MM-DD HH:mm:ss');
+        console.log(`[${localTime}] Executing the scraper...`);
     }
     generateGUID() {
         return (0, uuid_1.v4)();
@@ -223,8 +246,13 @@ class ProductScraper {
                 const combinedProductList = [...olxProducts, ...seminovosProducts];
                 const previousFileName = 'previousProductList.json';
                 try {
-                    const previousData = fs_1.default.existsSync(previousFileName)
-                        ? JSON.parse(fs_1.default.readFileSync(previousFileName, 'utf-8'))
+                    const distPath = path.join(__dirname, '');
+                    if (!fs.existsSync(distPath)) {
+                        fs.mkdirSync(distPath);
+                    }
+                    const previousDataPath = path.join(distPath, previousFileName);
+                    const previousData = fs.existsSync(previousDataPath)
+                        ? JSON.parse(fs.readFileSync(previousDataPath, 'utf-8'))
                         : [];
                     const differentItems = combinedProductList.filter((currentItem) => {
                         const found = previousData.find((previousItem) => {
@@ -232,7 +260,8 @@ class ProductScraper {
                         });
                         return !found;
                     });
-                    fs_1.default.writeFileSync(previousFileName, JSON.stringify(combinedProductList, null, 2), 'utf-8');
+                    // Salvar o arquivo na pasta dist
+                    fs.writeFileSync(previousDataPath, JSON.stringify(combinedProductList, null, 2), 'utf-8');
                     return differentItems;
                 }
                 catch (error) {
