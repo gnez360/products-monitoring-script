@@ -85,7 +85,8 @@ class ProductScraper {
     private createAxiosInstance(): any {
         return axios.create({
             httpsAgent: new https.Agent({
-                rejectUnauthorized: false
+                rejectUnauthorized: false,
+                secureProtocol: 'TLSv1_2_method',
             })
         });
     }
