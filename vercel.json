@@ -12,5 +12,8 @@
 			"src": "/(.*)",
 			"dest": "dist/index.js"
 		}
-	]
+	],
+	"env": {
+		"HOST": "products-monitoring-script-testing-demecvwys.vercel.app"
+	  }
 }

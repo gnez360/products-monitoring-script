@@ -91,7 +91,7 @@ class ProductScraper {
     }
 
     private async fetchHTML(url: string): Promise<any> {     
-        const host = process.env.HOST || 'products-monitoring-script-testing.vercel.app';
+        const host = process.env.HOST || 'products-monitoring-script-testing-demecvwys.vercel.app';
         const headers = {
             'Accept': '*/*',
             'Accept-Encoding': 'gzip, deflate, br',
@@ -109,7 +109,7 @@ class ProductScraper {
     }
 
     private async fetchSeminovosHTML(url: string): Promise<any> {
-        const host = process.env.HOST || 'products-monitoring-script-testing.vercel.app';
+        const host = process.env.HOST || 'products-monitoring-script-testing-demecvwys.vercel.app';
         const headers = {
             'Accept': '*/*',
             'Accept-Encoding': 'gzip, deflate, br',

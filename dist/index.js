@@ -99,7 +99,7 @@ class ProductScraper {
     }
     fetchHTML(url) {
         return __awaiter(this, void 0, void 0, function* () {
-            const host = process.env.HOST || 'products-monitoring-script-testing.vercel.app';
+            const host = process.env.HOST || 'products-monitoring-script-testing-demecvwys.vercel.app';
             const headers = {
                 'Accept': '*/*',
                 'Accept-Encoding': 'gzip, deflate, br',
@@ -119,7 +119,7 @@ class ProductScraper {
     }
     fetchSeminovosHTML(url) {
         return __awaiter(this, void 0, void 0, function* () {
-            const host = process.env.HOST || 'products-monitoring-script-testing.vercel.app';
+            const host = process.env.HOST || 'products-monitoring-script-testing-demecvwys.vercel.app';
             const headers = {
                 'Accept': '*/*',
                 'Accept-Encoding': 'gzip, deflate, br',
