@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import express from 'express';
+import express, { Request, Response } from 'express'
 import axios from 'axios';
 import cheerio from 'cheerio';
 import fs from 'fs';
@@ -286,10 +286,25 @@ class ProductScraper {
 }
 
 
+
 const productScraper = new ProductScraper();
 const app = express();
 
-app.post('/scrape', async (req, res) => {
+const port = process.env.PORT || 8080
+
+app.get('/', (_req: Request, res: Response) => {
+  return res.send('Express Typescript on Vercel')
+})
+
+app.get('/ping', (_req: Request, res: Response) => {
+  return res.send('pong 🏓')
+})
+
+app.listen(port, () => {
+  return console.log(`Server is listening on ${port}`)
+})
+
+app.get('/scrape', async (req, res) => {
     await productScraper.execute();
     res.status(200).send('Scraping process initiated.');
 });

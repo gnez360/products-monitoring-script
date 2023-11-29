@@ -265,7 +265,17 @@ class ProductScraper {
 }
 const productScraper = new ProductScraper();
 const app = (0, express_1.default)();
-app.post('/scrape', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const port = process.env.PORT || 8080;
+app.get('/', (_req, res) => {
+    return res.send('Express Typescript on Vercel');
+});
+app.get('/ping', (_req, res) => {
+    return res.send('pong 🏓');
+});
+app.listen(port, () => {
+    return console.log(`Server is listening on ${port}`);
+});
+app.get('/scrape', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     yield productScraper.execute();
     res.status(200).send('Scraping process initiated.');
 }));
