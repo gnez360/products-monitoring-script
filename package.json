@@ -1,14 +1,28 @@
 {
-  "name": "vercel-express-scraper",
+  "name": "vercel-express-scrapper",
   "version": "1.0.0",
-  "main": "index.ts",
+  "description": "",
+  "main": "index.js",
   "scripts": {
-    "dev": "ts-node index.ts",
-    "build": "tsc && node index.js",
-    "start": "ts-node index.ts"
+    "start": "nodemon src/index.ts",
+    "build": "rimraf dist && tsc",
+    "ts.check": "tsc --project tsconfig.json",
+    "add-build": "git add dist"
   },
+  "pre-commit": [
+    "ts.check",
+    "build",
+    "add-build"
+  ],
+  "keywords": [],
+  "author": "Guilherme Nery",
   "dependencies": {
-    "@types/node": "^17.0.42",
+    "@types/express": "^4.17.14",
+    "@types/node": "^18.11.9",
+    "nodemon": "^2.0.20",
+    "pre-commit": "^1.2.2",
+    "ts-node": "^10.9.1",
+    "typescript": "^4.8.4",
     "axios": "^0.24.0",
     "cheerio": "^1.0.0-rc.10",
     "express": "^4.17.1",
@@ -28,7 +42,8 @@
     "@vercel/node": "^2.9.6",
     "node-cron": "^3.0.3",
     "ts-node": "^10.9.1",
-    "typescript": "^4.9.5"
+    "typescript": "^4.9.5",
+    "express": "^4.18.2"
   },
   "engines": {
     "node": ">=14.0.0"
