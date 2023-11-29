@@ -235,49 +235,42 @@ class ProductScraper {
     }
     
     private async getProductListDetails(): Promise<ProductItem[]> {
-      try {
-        const olxProducts = (await this.getOlxProducts()) || [];
-        const seminovosProducts = (await this.getSeminovosProducts()) || [];
-    
-        const combinedProductList: ProductItem[] = [...olxProducts, ...seminovosProducts];
-    
-        const previousFileName = 'previousProductList.json';
-    
         try {
-          
-          const distPath = path.join(__dirname, '');
-    
-         
-          if (!fs.existsSync(distPath)) {
-            fs.mkdirSync(distPath);
-          }
-    
-          const previousDataPath = path.join(distPath, previousFileName);
-    
-          const previousData: ProductItem[] = fs.existsSync(previousDataPath)
-            ? JSON.parse(fs.readFileSync(previousDataPath, 'utf-8'))
-            : [];
-    
-          const differentItems = combinedProductList.filter((currentItem) => {
-            const found = previousData.find((previousItem) => {
-              return JSON.stringify(currentItem) === JSON.stringify(previousItem);
+          const olxProducts = (await this.getOlxProducts()) || [];
+          const seminovosProducts = (await this.getSeminovosProducts()) || [];
+      
+          const combinedProductList: ProductItem[] = [...olxProducts, ...seminovosProducts];
+      
+          const previousFileName = 'previousProductList.json';
+      
+          try {
+        
+            const tempPath = path.join('/tmp', previousFileName);
+      
+            const previousData: ProductItem[] = fs.existsSync(tempPath)
+              ? JSON.parse(fs.readFileSync(tempPath, 'utf-8'))
+              : [];
+      
+            const differentItems = combinedProductList.filter((currentItem) => {
+              const found = previousData.find((previousItem) => {
+                return JSON.stringify(currentItem) === JSON.stringify(previousItem);
+              });
+              return !found;
             });
-            return !found;
-          });
-    
-          // Salvar o arquivo na pasta dist
-          fs.writeFileSync(previousDataPath, JSON.stringify(combinedProductList, null, 2), 'utf-8');
-    
-          return differentItems;
+      
+          
+            fs.writeFileSync(tempPath, JSON.stringify(combinedProductList, null, 2), 'utf-8');
+      
+            return differentItems;
+          } catch (error) {
+            console.error(`Error processing/writing JSON files: ${error}`);
+            return [];
+          }
         } catch (error) {
-          console.error(`Error processing/writing JSON files: ${error}`);
+          console.error(`Error getting product details: ${error}`);
           return [];
         }
-      } catch (error) {
-        console.error(`Error getting product details: ${error}`);
-        return [];
       }
-    }
     
 
 

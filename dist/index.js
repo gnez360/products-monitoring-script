@@ -246,13 +246,9 @@ class ProductScraper {
                 const combinedProductList = [...olxProducts, ...seminovosProducts];
                 const previousFileName = 'previousProductList.json';
                 try {
-                    const distPath = path.join(__dirname, '');
-                    if (!fs.existsSync(distPath)) {
-                        fs.mkdirSync(distPath);
-                    }
-                    const previousDataPath = path.join(distPath, previousFileName);
-                    const previousData = fs.existsSync(previousDataPath)
-                        ? JSON.parse(fs.readFileSync(previousDataPath, 'utf-8'))
+                    const tempPath = path.join('/tmp', previousFileName);
+                    const previousData = fs.existsSync(tempPath)
+                        ? JSON.parse(fs.readFileSync(tempPath, 'utf-8'))
                         : [];
                     const differentItems = combinedProductList.filter((currentItem) => {
                         const found = previousData.find((previousItem) => {
@@ -260,8 +256,7 @@ class ProductScraper {
                         });
                         return !found;
                     });
-                    // Salvar o arquivo na pasta dist
-                    fs.writeFileSync(previousDataPath, JSON.stringify(combinedProductList, null, 2), 'utf-8');
+                    fs.writeFileSync(tempPath, JSON.stringify(combinedProductList, null, 2), 'utf-8');
                     return differentItems;
                 }
                 catch (error) {
