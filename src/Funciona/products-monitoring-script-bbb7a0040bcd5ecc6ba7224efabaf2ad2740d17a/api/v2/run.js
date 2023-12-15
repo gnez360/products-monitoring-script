@@ -26,7 +26,7 @@ class ProductScraper {
         this.token = TOKEN;
         this.endpoint = ENDPOINT;
         this.execute();
-       
+
         cron.schedule('*/1 * * * *', async () => {
             console.log('Executing the scraper...');
             await this.execute();
@@ -79,7 +79,7 @@ class ProductScraper {
                 'User-Agent': 'PostmanRuntime/7.34.0',
                 'Host': 'olx.com.br'
             };
-            const response = await axiosInstance.get(url, { headers });        
+            const response = await axiosInstance.get(url, { headers });
             return response.data;
         } catch (error) {
             throw new Error(`Error fetching HTML: ${error}`);
@@ -97,15 +97,8 @@ class ProductScraper {
 
         try {
             const axiosInstance = this.createAxiosInstance();
-            const response = await axiosInstance.get(url, {
-                headers,
-                responseType: 'text',
-                decompress: true, 
-            });   
-       
-            const responseData = Buffer.from(response.data).toString('utf-8');
-    
-            return responseData.toString();
+            const response = await axiosInstance.get(url, {});
+            return response.data;
         } catch (error) {
             console.error('Error during decompression:', error);
             throw new Error(`Error fetching HTML: ${error}`);
@@ -152,10 +145,10 @@ class ProductScraper {
     transformarLink(link) {
         const regex1 = /https:\/\/carros\.seminovosbh\.com\.br\/(\w+)\/(\w+)\/(\d+)\/(\d+)\/(\w+)/;
         const regex2 = /https:\/\/carros\.seminovosbh\.com\.br\/(\w+)-(\w+)-(\d+)-(\d+)-(\d+)-(\w+)\.jpeg/;
-        
+
         const match1 = link.match(regex1);
         const match2 = link.match(regex2);
-    
+
         if (match1) {
             const novoLink = `https://seminovos.com.br/${match1[1]}-${match1[2]}-${match1[3]}-${match1[4]}--${match1[5]}`;
             return novoLink;
@@ -167,13 +160,13 @@ class ProductScraper {
             return null;
         }
     }
-    
+
     async getOlxProducts() {
         try {
-            const html = await this.fetchHTML(OLX_URL);          
+            const html = await this.fetchHTML(OLX_URL);
             const links = this.filterElementsJsonOlx(html);
             const products = links[0].props.pageProps.ads;
-            const combinedData = products.map((product, index) => {                       
+            const combinedData = products.map((product, index) => {
                 return {
                     title: product.title,
                     price: product.price,
@@ -198,7 +191,8 @@ class ProductScraper {
                 const url = `${SEMINOVOS_BASE_URL}?page=${page}&ajax`;
                 const html = await this.fetchSeminovosHTML(url);
                 const productsList = this.filterElementsJson(html);
-                const products = productsList.map(element => JSON.parse(element));            
+                const products = productsList.map(element => JSON.parse(element));
+                delete products[0];
                 const combinedData = products.map(product => ({
                     title: product.name,
                     price: this.formatCurrencyBRL(product.offers.price),
@@ -216,12 +210,17 @@ class ProductScraper {
     }
 
     async getProductListDetails() {
-        //const olxProducts = await this.getOlxProducts();
-       const olxProducts = [];
+        const olxProducts = await this.getOlxProducts();
+       // const olxProducts = [];
         const seminovosProducts = await this.getSeminovosProducts();
-
+        delete seminovosProducts[0];
         const combinedProductList = [...olxProducts, ...seminovosProducts];
-
+        for (var key in combinedProductList) {
+            if (combinedProductList[key] === undefined) {         
+              delete combinedProductList[key];
+            }
+        }
+          
         const previousFileName = 'previousProductList.json';
 
         try {
@@ -255,7 +254,7 @@ class ProductScraper {
             products.forEach(item => {
                 const message = `Title: ${item.title}\nPrice: ${item.price}\nLocation: ${item.locationAndDate.location}\nDate: ${item.locationAndDate.date}\nImage: ${item.image}\n\nLink: ${item.link}`;
                 this.sendMessage(message);
-            });   
+            });
         } catch (error) {
             console.error(error);
         }
