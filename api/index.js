@@ -73,14 +73,8 @@ class ProductService {
         try {
             const response = await axios.get(baseURL, {
                 params,
-                headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-                    'Referer': 'https://www.netimoveis.com/',
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
+                headers
             });
-
 
             const jsonString = Buffer.from(response.data).toString('utf-8');
             const data = JSON.parse(jsonString);
