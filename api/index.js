@@ -36,8 +36,20 @@ class ProductService {
             `🔗 Link: ${item.link}`;
     }
 
+
+    _createAxiosInstance() {
+        return axios.create({
+            httpsAgent: new https.Agent({
+                rejectUnauthorized: false
+            })
+        });
+    }
+
+
     // Função para buscar os dados da Netimoveis
     async _fetchRawData() {
+        const axiosInstance = this._createAxiosInstance();
+
         const baseURL = 'https://www.netimoveis.com/pesquisa';
 
         const params = {
@@ -71,7 +83,7 @@ class ProductService {
         };
 
         try {
-            const response = await axios.get(baseURL, {
+            const response = await axiosInstance.get(baseURL, {
                 params,
                 headers
             });
