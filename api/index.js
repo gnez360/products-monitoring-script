@@ -5,7 +5,6 @@ const moment = require('moment');
 const https = require('https');
 const zlib = require('zlib');
 require('dotenv').config();
-const puppeteer = require('puppeteer');
 
 moment.locale('pt-BR');
 
@@ -38,32 +37,59 @@ class ProductService {
     }
 
     // Função para buscar os dados da Netimoveis
-   async _fetchRawData() {
-    const url = 'https://www.netimoveis.com/venda/minas-gerais/belo-horizonte/apartamento?tipo=apartamento&transacao=venda&localizacao=BR-MG-belo-horizonte---';
+    async _fetchRawData() {
+        const baseURL = 'https://www.netimoveis.com/pesquisa';
 
-    const browser = await puppeteer.launch({ headless: true });
-    const page = await browser.newPage();
+        const params = {
+            tipo: 'apartamento',
+            transacao: 'venda',
+            localizacao: JSON.stringify([
+                {
+                    urlPais: 'BR',
+                    urlEstado: 'minas-gerais',
+                    urlCidade: 'belo-horizonte',
+                    urlRegiao: '',
+                    urlBairro: '',
+                    urlLogradouro: '',
+                    idAgrupamento: '',
+                    tipo: 'cidade',
+                    idLocalizacao: 'BR-MG-belo-horizonte---'
+                }
+            ]),
+            pagina: 1,
+            retornaPaginacao: true,
+            outrasPags: true
+        };
 
-    try {
-      await page.goto(url, { waitUntil: 'networkidle2', timeout: 0 });
+        const headers = {
+            'Accept': 'application/json, text/javascript, */*; q=0.01',
+            'Accept-Encoding': 'br',
+            'Accept-Language': 'pt-BR,pt;q=0.9',
+            'Referer': 'https://www.netimoveis.com/venda/minas-gerais/belo-horizonte/apartamento?tipo=apartamento&transacao=venda&localizacao=BR-MG-belo-horizonte---',
+            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1',
+            'X-Requested-With': 'XMLHttpRequest'
+        };
 
-      // Aguarda o script do Nuxt carregar os dados (padrão em sites com Vue/Nuxt)
-      const responseData = await page.evaluate(() => {
-        return window.__NUXT__?.state?.[0] || null;
-      });
+        try {
+            const response = await axios.get(baseURL, {
+                params,
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+                    'Referer': 'https://www.netimoveis.com/',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
 
-      if (!responseData || !Array.isArray(responseData.lista)) {
-        throw new Error('Não foi possível encontrar a lista de imóveis no estado da página.');
-      }
 
-      return responseData;
-    } catch (err) {
-      console.error('Erro ao buscar dados com Puppeteer:', err.message);
-      throw err;
-    } finally {
-      await browser.close();
+            const jsonString = Buffer.from(response.data).toString('utf-8');
+            const data = JSON.parse(jsonString);
+            return data;
+        } catch (error) {
+            console.error('Erro ao buscar dados:', error.message);
+            throw error;
+        }
     }
-  }
 
 
     // Método principal que busca, processa e retorna os produtos
