@@ -37,19 +37,7 @@ class ProductService {
     }
 
 
-    _createAxiosInstance() {
-        return axios.create({
-            httpsAgent: new https.Agent({
-                rejectUnauthorized: false
-            })
-        });
-    }
-
-
-    // Função para buscar os dados da Netimoveis
-    async _fetchRawData() {
-        const axiosInstance = this._createAxiosInstance();
-
+  async _fetchRawData() {
         const baseURL = 'https://www.netimoveis.com/pesquisa';
 
         const params = {
@@ -73,6 +61,9 @@ class ProductService {
             outrasPags: true
         };
 
+        const urlParams = new URLSearchParams(params);
+        const fullURL = `${baseURL}?${urlParams.toString()}`;
+
         const headers = {
             'Accept': 'application/json, text/javascript, */*; q=0.01',
             'Accept-Encoding': 'br',
@@ -82,21 +73,29 @@ class ProductService {
             'X-Requested-With': 'XMLHttpRequest'
         };
 
+        const agent = new https.Agent({
+            rejectUnauthorized: false
+        });
+
         try {
-            const response = await axiosInstance.get(baseURL, {
-                params,
-                headers
+            const response = await fetch(fullURL, {
+                method: 'GET',
+                headers: headers,
+                agent: agent
             });
 
-            const jsonString = Buffer.from(response.data).toString('utf-8');
-            const data = JSON.parse(jsonString);
+            if (!response.ok) {
+                throw new Error(`Erro HTTP! Status: ${response.status} - ${response.statusText}`);
+            }
+
+            const data = await response.json();
+
             return data;
         } catch (error) {
             console.error('Erro ao buscar dados:', error.message);
             throw error;
         }
     }
-
 
     // Método principal que busca, processa e retorna os produtos
     async getLatestProducts(minutesThreshold = 1440) { // 1440 minutos = 24 horas
