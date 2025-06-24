@@ -1,19 +1,15 @@
 {
-	"version": 2,
-	"builds": [
-		{
-			"src": "dist/index.js",
-			"use": "@vercel/node",
-			"config": { "includeFiles": ["dist/**"] }
-		}
-	],
-	"routes": [
-		{
-			"src": "/(.*)",
-			"dest": "dist/index.js"
-		}
-	],
-	"env": {
-		"HOST": "products-monitoring-script-testing-demecvwys.vercel.app"
-	  }
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/index.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "api/index.js"
+    }
+  ]
 }
