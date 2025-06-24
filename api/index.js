@@ -4,13 +4,13 @@ const { v4: uuidv4 } = require('uuid');
 const moment = require('moment');
 const https = require('https');
 const zlib = require('zlib');
-require('dotenv').config(); 
+require('dotenv').config();
 
 moment.locale('pt-BR');
 
-TELEGRAM_GW_TOKEN="dGVzdGVhMjU6NjEyRFNXb1VPZjhvVjFxbUtjSlE="
-TELEGRAM_GW_ENDPOINT="https://guilherme-nery-c5a2b.http.msging.net/messages"
-TELEGRAM_RECIPIENT="332422729@telegram.gw.msging.net"
+TELEGRAM_GW_TOKEN = "dGVzdGVhMjU6NjEyRFNXb1VPZjhvVjFxbUtjSlE="
+TELEGRAM_GW_ENDPOINT = "https://guilherme-nery-c5a2b.http.msging.net/messages"
+TELEGRAM_RECIPIENT = "332422729@telegram.gw.msging.net"
 
 
 class ProductService {
@@ -73,9 +73,14 @@ class ProductService {
         try {
             const response = await axios.get(baseURL, {
                 params,
-                headers,
-                responseType: 'arraybuffer'
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+                    'Referer': 'https://www.netimoveis.com/',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
             });
+
 
             const jsonString = Buffer.from(response.data).toString('utf-8');
             const data = JSON.parse(jsonString);
