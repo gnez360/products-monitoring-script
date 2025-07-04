@@ -1,6 +1,5 @@
 const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
-const cheerio = require('cheerio');
 const fs = require('fs');
 const moment = require('moment');
 const https = require('https');
@@ -59,29 +58,60 @@ class ProductScraper {
         });
     }
 
-    async fetchHTML() {
+    async fetchHTML(tipoImovel) {
         const baseURL = 'https://www.netimoveis.com/pesquisa';
+        let params = {};
+        if (tipoImovel && tipoImovel !== 'cobertura') {
+            params = {
+                tipo: 'apartamento',
+                transacao: 'venda',
+                localizacao: JSON.stringify([
+                    {
+                        urlPais: 'BR',
+                        urlEstado: 'minas-gerais',
+                        urlCidade: 'belo-horizonte',
+                        urlRegiao: '',
+                        urlBairro: '',
+                        urlLogradouro: '',
+                        idAgrupamento: '',
+                        tipo: 'cidade',
+                        idLocalizacao: 'BR-MG-belo-horizonte---'
+                    }
+                ]),
+                pagina: 1,
+                retornaPaginacao: true,
+                outrasPags: true
+            };
+        }
+        else {
+            params = {
+                tipo: 'cobertura',
+                transacao: 'venda',
+                localizacao: JSON.stringify([
+                    {
+                        urlPais: 'BR',
+                        urlEstado: 'minas-gerais',
+                        urlCidade: 'belo-horizonte',
+                        urlRegiao: '',
+                        urlBairro: '',
+                        urlLogradouro: '',
+                        idAgrupamento: '',
+                        idLocalizacao: 'BR-MG-belo-horizonte---'
+                    }
+                ]),
+                valorMaximo: 600000,
+                vagas: 2,
+                banhos: 2,
+                quartos: 3,
+                pagina: 1,
+                valorMaximo: 600000,
+                tipo: 'cobertura',
+                pagina: 1,
+                retornaPaginacao: true,
+                outrasPags: true
+            };
+        }
 
-        const params = {
-            tipo: 'apartamento',
-            transacao: 'venda',
-            localizacao: JSON.stringify([
-                {
-                    urlPais: 'BR',
-                    urlEstado: 'minas-gerais',
-                    urlCidade: 'belo-horizonte',
-                    urlRegiao: '',
-                    urlBairro: '',
-                    urlLogradouro: '',
-                    idAgrupamento: '',
-                    tipo: 'cidade',
-                    idLocalizacao: 'BR-MG-belo-horizonte---'
-                }
-            ]),
-            pagina: 1,
-            retornaPaginacao: true,
-            outrasPags: true
-        };
 
         const headers = {
             'Accept': 'application/json, text/javascript, */*; q=0.01',
@@ -99,11 +129,11 @@ class ProductScraper {
                 responseType: 'arraybuffer'
             });
 
-            const decompressed = zlib.brotliDecompressSync(response.data);
+            // const decompressed = zlib.brotliDecompressSync(response.data);
 
-            const jsonString = decompressed.toString('utf-8');
+            //  const jsonString = decompressed.toString('utf-8');
 
-            const data = JSON.parse(jsonString);
+            const data = JSON.parse(response.data);
 
             return data;
         } catch (error) {
@@ -120,9 +150,9 @@ class ProductScraper {
         return formatter.format(price);
     };
 
-    async getNetImoveisProducts() {
+    async getNetImoveisProducts(tipoImovel) {
         try {
-            const responseData = await this.fetchHTML();
+            const responseData = await this.fetchHTML(tipoImovel);
 
             if (!responseData || !Array.isArray(responseData.lista)) {
                 throw new Error('Lista de imóveis não encontrada ou inválida');
@@ -175,11 +205,14 @@ class ProductScraper {
 
     async execute() {
         try {
-            const productListDetails = await this.getNetImoveisProducts();
+            const productListDetails = await this.getNetImoveisProducts("cobertura");
             const productList = new Set(productListDetails);
             let products = [...productList];
+       
             //  Filtra somente os imóveis atualizados nas últimas 24 horas (1440 minutos)
-            products = products.filter(p => p.updatedMinutesAgo <= 2450);
+
+            products = products.filter(p => p.updatedMinutesAgo <= 1440);
+                      
             products.forEach(item => {
                 const message = `🏠 <b>${item.title}</b>\n` +
                     `💰 Preço: ${item.price}\n` +
@@ -188,7 +221,8 @@ class ProductScraper {
                     `🔗 Link: ${item.link}`;
 
 
-                this.sendMessage(message);
+              //  this.sendMessage(message);
+                console.log(message);
             });
 
 

@@ -4,6 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const moment = require('moment');
 const https = require('https');
 const zlib = require('zlib');
+const { HttpsProxyAgent } = require('https-proxy-agent');
 require('dotenv').config();
 
 moment.locale('pt-BR');
@@ -37,7 +38,7 @@ class ProductService {
     }
 
 
-  async _fetchRawData() {
+    async _fetchRawData(proxyUrl = null) { // Adicione proxyUrl como parâmetro
         const baseURL = 'https://www.netimoveis.com/pesquisa';
 
         const params = {
@@ -69,13 +70,18 @@ class ProductService {
             'Accept-Encoding': 'br',
             'Accept-Language': 'pt-BR,pt;q=0.9',
             'Referer': 'https://www.netimoveis.com/venda/minas-gerais/belo-horizonte/apartamento?tipo=apartamento&transacao=venda&localizacao=BR-MG-belo-horizonte---',
-            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1',
-            'X-Requested-With': 'XMLHttpRequest'
+            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1'
         };
 
-        const agent = new https.Agent({
-            rejectUnauthorized: false
-        });
+        let agent;
+        if (proxyUrl) {
+            console.log(`Usando proxy: ${proxyUrl}`);
+            agent = new HttpsProxyAgent(proxyUrl);
+        } else {
+            agent = new https.Agent({
+                rejectUnauthorized: false
+            });
+        }
 
         try {
             const response = await fetch(fullURL, {
@@ -83,6 +89,7 @@ class ProductService {
                 headers: headers,
                 agent: agent
             });
+            console.log(response)
 
             if (!response.ok) {
                 throw new Error(`Erro HTTP! Status: ${response.status} - ${response.statusText}`);
@@ -98,8 +105,8 @@ class ProductService {
     }
 
     // Método principal que busca, processa e retorna os produtos
-    async getLatestProducts(minutesThreshold = 1440) { // 1440 minutos = 24 horas
-        const responseData = await this._fetchRawData();
+    async getLatestProducts(minutesThreshold = 1440, proxyUrl = null) { // Adicione proxyUrl
+        const responseData = await this._fetchRawData(proxyUrl); // Passe o proxyUrl
 
         if (!responseData || !Array.isArray(responseData.lista)) {
             throw new Error('A lista de imóveis não foi encontrada na resposta da API.');
@@ -141,7 +148,7 @@ class ProductService {
         const data = {
             id: uuidv4(),
             to: this.recipient,
-            type: 'text/plain', // Para usar o HTML do _formatTelegramMessage, o tipo deve ser 'application/vnd.lime.chatstate+json' ou similar dependendo da API
+            type: 'text/plain',
             content: content,
         };
         const config = {
@@ -149,13 +156,11 @@ class ProductService {
                 'Content-Type': 'application/json',
                 'Authorization': `Key ${this.token}`,
             },
-            httpsAgent: new https.Agent({ rejectUnauthorized: false }) // Mantido do código original
+            httpsAgent: new https.Agent({ rejectUnauthorized: false })
         };
 
         try {
             console.log('Enviando mensagem para o Telegram Gateway:', this.endpoint);
-            // Envia a mensagem para o endpoint do Telegram Gateway
-
             await axios.post(this.endpoint, data, config);
             console.log('Mensagem de notificação enviada com sucesso.');
         } catch (error) {
@@ -165,7 +170,6 @@ class ProductService {
 
     // Envia notificações para uma lista de produtos
     async sendNotificationsForProducts(products) {
-        // Usamos Promise.all para enviar todas as mensagens em paralelo
         const notificationPromises = products.map(product => {
             const message = this._formatTelegramMessage(product);
             return this.sendMessage(message);
@@ -185,9 +189,15 @@ const timeToSearch = 60;
 app.get('/api/get-updates', async (req, res) => {
     console.log("Recebida requisição em /api/get-updates");
 
+    // Obtém o proxy da query parameter
+    const proxy = req.query.proxy;
+    if (proxy) {
+        console.log(`Proxy recebido na requisição: ${proxy}`);
+    }
+
     try {
-        // 1. Busca os produtos mais recentes (últimas 24h)
-        const recentProducts = await productService.getLatestProducts(timeToSearch);
+        // 1. Busca os produtos mais recentes, passando o proxy se ele existir
+        const recentProducts = await productService.getLatestProducts(timeToSearch, proxy);
 
         // 2. Envia as notificações em segundo plano (não precisa esperar a conclusão para responder à API)
         if (recentProducts.length > 0) {
